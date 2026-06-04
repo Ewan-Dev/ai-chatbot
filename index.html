@@ -13,7 +13,8 @@
         }
         h1,
         input,
-        button{
+        button,
+        select{
             font-family: "VT323", monospace;        }
         input:active, 
         input:focus{
@@ -98,6 +99,21 @@
         #buttons{
             height: 80%;
         }
+        select{
+            box-sizing: content-box;
+            height: 1.5em;
+            padding: 0;
+            box-sizing: border-box;
+            width:100% !important;
+                    background-color: #DDD2CF;
+
+            box-shadow:  inset 0px -3px white , inset 3px 3px #858081, inset -3px 0px white ;
+
+        }
+        select:active,
+        select:focus{
+            outline: none;
+        }
         input{
             width: 100%;
             border-radius: 0em;
@@ -161,8 +177,11 @@
 
         <section id="message-container">
             <div id="control-bar"><span id="icon-title"><img id="chat-icon" src="/chat.png"><p id="window-title">Confabulari - AI Chatbot</p></span><img id="buttons" src="/buttons.png"></div>
-            <input placeholder="API key" id="api_key" type="password">
-            <div id="messages">
+            <input placeholder="Paste API key to get all models and to chat!" id="api_key" type="password">
+<select id="select">
+    <option value="">No model selected</option>
+</select>            
+<div id="messages">
                 <div id="message-boxes"></div>
             <form  id="form"><input id="input"><button type="submit" id="send-message-btn">Send</button></form>
 
@@ -172,12 +191,15 @@
 
     <script>
         let messages= []
+        const select = document.getElementById("select")
         const input = document.getElementById("input")
         const form = document.getElementById("form")
         const apiKeyInput = document.getElementById("api_key")
-        let model = 'llama-3.3-70b-versatile'
+        let model = 'llama-3.3-70b-versatile' // default fallback
 
         messages.push({role: "system", content: "You are a helpful AI assistant."})
+
+            apiKeyInput.addEventListener("change", fetchAllModels)
 
         function pushMessageToDom(role, content){
             const chatBubble = document.createElement('div');
@@ -200,12 +222,18 @@
             const userText = input.value
             input.value = ""
             console.log(userText)
+            const model = select.value
 
             if (!apiKeyInput.value){
                 pushMessageToDom("alert", "No API key detected")
                 return
             }
             else if (!userText){
+                return
+            }
+            else if (!model){
+                pushMessageToDom("alert", "No model selected")
+
                 return
             }
             messages.push({role: "user", content: userText})
@@ -236,5 +264,23 @@
                 console.error(err)
             }
         })
+
+        async function fetchAllModels(){
+
+            const APIKey = apiKeyInput.value
+            const response = await fetch("https://api.groq.com/openai/v1/models", {
+                headers : {
+                Authorization: `Bearer ${APIKey}`
+                }
+            })
+                const listsData = await response.json()
+                listsData.data.forEach(model => {
+                    const option = document.createElement("option")
+                    option.value = model.id
+                    option.textContent = model.id
+                    select.appendChild(option)
+                    
+                })
+        }
     </script>
 </html>
